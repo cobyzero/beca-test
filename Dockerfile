@@ -29,8 +29,8 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copiar los artefactos estáticos compilados en la etapa 1
 COPY --from=build /app/build/web /usr/share/nginx/html
 
-# Puerto HTTP estándar
-EXPOSE 80
+# Puerto personalizado configurado
+EXPOSE 3030
 
 # Iniciar Nginx en primer plano
 CMD ["nginx", "-g", "daemon off;"]
