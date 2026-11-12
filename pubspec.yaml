@@ -61,6 +61,7 @@ flutter:
   assets:
     - assets/data/questions.json
     - assets/images/2025/
+    - assets/images/2024/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

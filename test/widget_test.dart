@@ -56,9 +56,10 @@ void main() {
     // 2. Pantalla principal de Exámenes
     expect(find.text('Exámenes de preparación'), findsOneWidget);
     expect(find.text('Simulacro Beca 18 · 2025'), findsOneWidget);
+    expect(find.text('Simulacro Beca 18 · 2024'), findsOneWidget);
     expect(find.text('Carlos'), findsOneWidget);
 
-    final startExamButton = find.text('Comenzar estudio');
+    final startExamButton = find.text('Comenzar estudio').first;
     await tester.ensureVisible(startExamButton);
     await tester.tap(startExamButton);
     await tester.pump();

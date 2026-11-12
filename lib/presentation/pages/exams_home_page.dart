@@ -61,14 +61,19 @@ class _ExamsHomePageState extends State<ExamsHomePage> {
       return;
     }
 
-    final prog2025 = await widget.progressRepository!.getProgress(
-      studentName: widget.studentName!,
-      year: 2025,
-    );
+    final counts = await _examsFuture;
+    final progressMap = <int, ExamProgress?>{};
+    for (final year in counts.keys) {
+      final prog = await widget.progressRepository!.getProgress(
+        studentName: widget.studentName!,
+        year: year,
+      );
+      progressMap[year] = prog;
+    }
 
     if (mounted) {
       setState(() {
-        _studentProgressByYear[2025] = prog2025;
+        _studentProgressByYear.addAll(progressMap);
       });
     }
   }

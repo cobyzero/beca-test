@@ -47,10 +47,17 @@ class _StudentLoginPageState extends State<StudentLoginPage> {
 
     // Precargar progreso de cada estudiante guardado para mostrar en sus tarjetas
     for (final name in list) {
-      final prog = await widget.progressRepository.getProgress(
+      final p2025 = await widget.progressRepository.getProgress(
         studentName: name,
         year: 2025,
       );
+      final p2024 = await widget.progressRepository.getProgress(
+        studentName: name,
+        year: 2024,
+      );
+      final prog = (p2025 != null && p2024 != null)
+          ? (p2025.updatedAt.isAfter(p2024.updatedAt) ? p2025 : p2024)
+          : (p2025 ?? p2024);
       _studentProgressMap[name] = prog;
     }
 
@@ -80,10 +87,17 @@ class _StudentLoginPageState extends State<StudentLoginPage> {
       _isSearching = true;
     });
 
-    final progress = await widget.progressRepository.getProgress(
+    final p2025 = await widget.progressRepository.getProgress(
       studentName: query,
       year: 2025,
     );
+    final p2024 = await widget.progressRepository.getProgress(
+      studentName: query,
+      year: 2024,
+    );
+    final progress = (p2025 != null && p2024 != null)
+        ? (p2025.updatedAt.isAfter(p2024.updatedAt) ? p2025 : p2024)
+        : (p2025 ?? p2024);
 
     if (mounted && _nameController.text.trim() == query) {
       setState(() {
