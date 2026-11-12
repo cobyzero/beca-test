@@ -79,6 +79,7 @@ class StudyPage extends StatelessWidget {
                   score: controller.score,
                   currentPhase: controller.currentPhase,
                   isMobile: isMobile,
+                  studentName: controller.studentName,
                   onBackToExams: onBackToExams,
                 ),
                 Expanded(
@@ -233,6 +234,7 @@ class _WebHeader extends StatelessWidget {
     required this.score,
     required this.currentPhase,
     required this.isMobile,
+    this.studentName,
     required this.onBackToExams,
   });
 
@@ -241,6 +243,7 @@ class _WebHeader extends StatelessWidget {
   final int score;
   final StudyPhase currentPhase;
   final bool isMobile;
+  final String? studentName;
   final VoidCallback onBackToExams;
 
   @override

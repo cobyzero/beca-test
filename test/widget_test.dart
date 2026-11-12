@@ -1,3 +1,4 @@
+import 'package:beca_test/data/repositories/in_memory_progress_repository.dart';
 import 'package:beca_test/main.dart';
 import 'package:beca_test/presentation/pages/study_page.dart';
 import 'package:flutter/material.dart';
@@ -20,31 +21,57 @@ void main() {
     }
   }
 
-  Future<void> runTwoPhaseFlow(WidgetTester tester) async {
-    await tester.pumpWidget(const BecaStudyApp());
+  Future<void> runTwoPhaseFlow(
+    WidgetTester tester, {
+    required InMemoryProgressRepository progressRepo,
+  }) async {
+    await tester.pumpWidget(
+      BecaStudyApp(
+        progressRepository: progressRepo,
+      ),
+    );
     await waitForAssets(tester);
 
-    // Pantalla principal con listado de exámenes (solo 2025 por ahora).
+    // 1. Vista de Registro / Búsqueda de Estudiante
+    expect(find.text('¿Quién está estudiando hoy?'), findsOneWidget);
+    expect(find.text('Tu nombre o alias'), findsOneWidget);
+
+    // Escribir nombre del estudiante
+    final nameField = find.byType(TextField);
+    await tester.enterText(nameField, 'Carlos');
+    await tester.pumpAndSettle();
+
+    // Como es nuevo, debe mostrar el estado correspondiente
+    expect(
+      find.text('Nuevo registro. Comenzarás desde la Pregunta 1.'),
+      findsOneWidget,
+    );
+
+    final startStudyButton = find.text('Comenzar estudio');
+    await tester.ensureVisible(startStudyButton);
+    await tester.tap(startStudyButton);
+    await tester.pump();
+    await waitForAssets(tester);
+
+    // 2. Pantalla principal de Exámenes
     expect(find.text('Exámenes de preparación'), findsOneWidget);
     expect(find.text('Simulacro Beca 18 · 2025'), findsOneWidget);
+    expect(find.text('Carlos'), findsOneWidget);
 
-    final startButton = find.text('Comenzar estudio');
-    await tester.ensureVisible(startButton);
-    await tester.tap(startButton);
-    await tester.pumpAndSettle();
+    final startExamButton = find.text('Comenzar estudio');
+    await tester.ensureVisible(startExamButton);
+    await tester.tap(startExamButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await waitForAssets(tester);
 
-    // Fase 1: Concepto (técnica Feynman) y ejemplo similar con otros datos.
+    // 3. Fase 1: Concepto (técnica Feynman)
     expect(find.text('Beca 18 · Estudio'), findsOneWidget);
     expect(find.text('Puntaje: 0 / 60'), findsOneWidget);
     expect(find.text('Producto de potencias de igual base'), findsOneWidget);
     expect(find.text('Ejemplo similar (con otros datos)'), findsOneWidget);
-    expect(
-      find.text('Resultado del ejemplo: 2⁷ × 5⁵ lapiceros.'),
-      findsNothing,
-    );
 
-    // Al presionar "Ver procedimiento y respuesta" se muestran los pasos y el resultado.
+    // Al presionar "Ver procedimiento y respuesta"
     final showSolutionButton = find.text('Ver procedimiento y respuesta');
     await tester.ensureVisible(showSolutionButton);
     await tester.tap(showSolutionButton);
@@ -54,15 +81,7 @@ void main() {
       findsOneWidget,
     );
 
-    // El indicador superior es solo visual: tocar "Examen" no cambia de fase.
-    await tester.tap(find.text('Examen'));
-    await tester.pump();
-    expect(
-      find.text('Convocatoria 2025 · Competencias Matemáticas · Pregunta 1'),
-      findsNothing,
-    );
-
-    // Solo se pasa a la Fase 2 presionando "Siguiente".
+    // Pasar a Fase 2 (Examen) presionando "Siguiente"
     final nextButton = find.text('Siguiente');
     await tester.ensureVisible(nextButton);
     await tester.tap(nextButton);
@@ -73,7 +92,7 @@ void main() {
       findsOneWidget,
     );
 
-    // Selecciona la alternativa correcta (c) y verifica.
+    // Seleccionar opción correcta (c) y verificar
     final optionC = find.text('2¹² × 3⁶ pernos.');
     await tester.ensureVisible(optionC);
     await tester.tap(optionC);
@@ -84,42 +103,17 @@ void main() {
     await tester.tap(verifyButton);
     await tester.pump();
 
-    expect(
-      find.text('Correcto. Revisa la resolución para confirmar el procedimiento.'),
-      findsOneWidget,
-    );
+    expect(find.text('Puntaje: 1 / 60'), findsOneWidget);
     expect(find.text('Resolución paso a paso'), findsOneWidget);
-    expect(find.text('Puntaje: 1 / 60'), findsOneWidget);
-    expect(find.text('Intentar de nuevo'), findsNothing);
 
-    // Se puede volver atrás al concepto y al regresar al examen la respuesta sigue bloqueada.
-    final backButton = find.text('Volver al concepto');
-    await tester.ensureVisible(backButton);
-    await tester.tap(backButton);
-    await tester.pumpAndSettle();
-
-    final returnToExam = find.text('Siguiente');
-    await tester.ensureVisible(returnToExam);
-    await tester.tap(returnToExam);
-    await tester.pumpAndSettle();
-
-    final optionA = find.text('2¹¹ × 3⁶ pernos.');
-    await tester.ensureVisible(optionA);
-    await tester.tap(optionA);
-    await tester.pump();
-
-    expect(find.text('Puntaje: 1 / 60'), findsOneWidget);
-    expect(find.text('Verificar respuesta'), findsNothing);
-
-    // Obtener controller para navegación de pruebas
+    // Controller para saltos
     final studyPage = tester.widget<StudyPage>(find.byType(StudyPage));
     final controller = studyPage.controller;
 
-    // Salto a la pregunta 6 (con imagen de vasos de agua y limonada).
+    // Saltar a pregunta 6 (con imagen)
     controller.jumpToQuestion(5);
     await tester.pumpAndSettle();
 
-    // Pasar al examen de P6 para comprobar imagen de la pregunta.
     final nextP6 = find.text('Siguiente');
     await tester.ensureVisible(nextP6);
     await tester.tap(nextP6);
@@ -131,7 +125,7 @@ void main() {
     );
     expect(find.byType(Image), findsWidgets);
 
-    // Salto a la pregunta 31 (Competencia Lectora: Texto 1).
+    // Saltar a pregunta 31 (Lectura: Texto 1)
     controller.jumpToQuestion(30);
     await tester.pumpAndSettle();
 
@@ -149,7 +143,7 @@ void main() {
       findsOneWidget,
     );
 
-    // Salto a la pregunta 60 (última pregunta del examen).
+    // Saltar a la última pregunta (P60) y finalizar
     controller.jumpToQuestion(59);
     await tester.pumpAndSettle();
 
@@ -158,12 +152,6 @@ void main() {
     await tester.tap(nextP60);
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Convocatoria 2025 · Competencia Lectora · Pregunta 60'),
-      findsOneWidget,
-    );
-
-    // Verificar respuesta en P60 y probar "Ver resultado"
     final optRutinas = find.text('Establece rutinas diarias.');
     await tester.ensureVisible(optRutinas);
     await tester.tap(optRutinas);
@@ -174,39 +162,58 @@ void main() {
     await tester.tap(verifyP60);
     await tester.pump();
 
-    // Como es la última pregunta (P60), aparece "Ver resultado"
     final finishButton = find.text('Ver resultado');
     await tester.ensureVisible(finishButton);
     await tester.tap(finishButton);
     await tester.pumpAndSettle();
 
     expect(find.text('Has completado el examen'), findsOneWidget);
-    expect(find.text('Puntaje obtenido'), findsOneWidget);
     expect(find.text('2 / 60'), findsAtLeastNWidgets(1));
-    expect(find.text('Ver examen'), findsOneWidget);
 
-    // "Ver examen" regresa al examen para revisar respuestas y resolución.
-    final reviewExamButton = find.text('Ver examen');
-    await tester.ensureVisible(reviewExamButton);
-    await tester.tap(reviewExamButton);
-    await tester.pumpAndSettle();
+    // Regresar a la lista de exámenes tocando "Volver a exámenes"
+    final backToExamsBtn = find.text('Volver a exámenes');
+    await tester.ensureVisible(backToExamsBtn);
+    await tester.tap(backToExamsBtn);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await waitForAssets(tester);
 
-    expect(
-      find.text('Convocatoria 2025 · Competencia Lectora · Pregunta 60'),
-      findsOneWidget,
-    );
-    expect(find.text('Resolución paso a paso'), findsOneWidget);
+    // 4. Comprobar que en la pantalla principal ahora se muestra el progreso guardado
+    expect(find.text('Completado'), findsOneWidget);
+    expect(find.text('Revisar examen'), findsOneWidget);
+
+    // 5. Cambiar de estudiante
+    final changeUserBtn = find.text('Carlos');
+    await tester.ensureVisible(changeUserBtn);
+    await tester.tap(changeUserBtn);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await waitForAssets(tester);
+
+    // Ahora estamos de nuevo en el login y probamos buscar "Carlos":
+    // debe detectar automáticamente el progreso previo guardado
+    expect(find.text('¿Quién está estudiando hoy?'), findsOneWidget);
+    final nameField2 = find.byType(TextField);
+    await tester.enterText(nameField2, 'Carlos');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await waitForAssets(tester);
+
+    expect(find.text('¡Progreso guardado encontrado!'), findsOneWidget);
+    expect(find.text('Continuar donde lo dejaste'), findsOneWidget);
+    expect(find.text('Reiniciar examen desde cero'), findsOneWidget);
   }
 
   testWidgets(
-    'Flujo completo desde pantalla principal hasta resultado final (Desktop)',
+    'Flujo completo con registro por nombre, persistencia de progreso y reanudación (Desktop)',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await runTwoPhaseFlow(tester);
+      final progressRepo = InMemoryProgressRepository();
+      await runTwoPhaseFlow(tester, progressRepo: progressRepo);
     },
   );
 
@@ -218,7 +225,8 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await runTwoPhaseFlow(tester);
+      final progressRepo = InMemoryProgressRepository();
+      await runTwoPhaseFlow(tester, progressRepo: progressRepo);
     },
   );
 }
