@@ -1,7 +1,8 @@
 .git
 .github
 .gitignore
-.fvm
+.fvm/flutter_sdk
+.fvm/versions
 .idea
 .vscode
 .dart_tool
